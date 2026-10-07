@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кодовый замок Хогвартса</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --oak1:#43291b; --oak2:#1d110b;
+  --gold:#c9a24b; --gold-hi:#f3de9a; --brass:#a8822f;
+  --ink:#2b1a10; --parch:#efe1b9;
+  --crimson:#8a1c2b; --emerald:#1f6b46;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:transparent}
+body{
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',Georgia,'Times New Roman',serif;color:var(--gold-hi);
+  -webkit-user-select:none;user-select:none;
+}
+.lock{position:relative;width:min(92vw,400px);padding:56px 0 20px}
+
+/* дужка */
+.shackle{
+  position:absolute;left:50%;top:0;width:210px;height:112px;margin-left:-105px;
+  border:18px solid var(--brass);border-bottom:none;border-radius:105px 105px 0 0;
+  box-shadow:inset 0 0 0 2px rgba(255,235,170,.35),0 4px 10px rgba(0,0,0,.4);
+  transform-origin:100% 100%;transition:transform .7s cubic-bezier(.3,1.4,.5,1);
+}
+.open .shackle{transform:translateY(-30px) rotate(-16deg)}
+
+/* корпус */
+.body{
+  position:relative;z-index:1;padding:24px 20px 22px;text-align:center;
+  background:linear-gradient(160deg,var(--oak1),var(--oak2));
+  border:3px solid var(--gold);border-radius:18px;
+  box-shadow:inset 0 0 0 6px #180c07,inset 0 0 0 8px rgba(201,162,75,.45),0 20px 40px rgba(0,0,0,.45);
+}
+.rivet{position:absolute;width:9px;height:9px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,var(--gold-hi),var(--brass) 70%);box-shadow:0 1px 2px #000}
+.rivet:nth-of-type(1){top:14px;left:14px}.rivet:nth-of-type(2){top:14px;right:14px}
+.rivet:nth-of-type(3){bottom:14px;left:14px}.rivet:nth-of-type(4){bottom:14px;right:14px}
+
+h1{margin:0 0 4px;font-size:21px;font-weight:700;letter-spacing:.06em;text-shadow:0 0 12px rgba(243,222,154,.35)}
+.hint{margin:0 0 16px;font-size:12px;color:var(--gold);opacity:.85;letter-spacing:.03em}
+
+/* диски */
+.wheels{display:flex;justify-content:center;gap:8px}
+.col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;max-width:58px}
+.arrow{
+  width:100%;height:24px;border:1px solid rgba(201,162,75,.5);border-radius:6px;cursor:pointer;
+  background:rgba(0,0,0,.35);color:var(--gold);font-size:11px;line-height:1;padding:0;
+}
+.arrow:hover{background:rgba(201,162,75,.25);color:var(--gold-hi)}
+.arrow:active{transform:translateY(1px)}
+.arrow:focus-visible,.wheel:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+.wheel{
+  position:relative;width:100%;height:132px;overflow:hidden;border-radius:8px;cursor:ns-resize;touch-action:none;
+  background:linear-gradient(90deg,#d5c394,var(--parch) 30%,var(--parch) 70%,#d5c394);
+  border:2px solid var(--gold);box-shadow:inset 0 0 14px rgba(0,0,0,.5);
+}
+.wheel::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(#2b1a10cc,transparent 34%,transparent 66%,#2b1a10cc)}
+.sel{position:absolute;left:0;right:0;top:44px;height:44px;z-index:3;pointer-events:none;
+  border-top:1.5px solid var(--crimson);border-bottom:1.5px solid var(--crimson)}
+.strip{will-change:transform}
+.d{height:44px;line-height:44px;text-align:center;font-size:30px;font-weight:700;color:var(--ink)}
+
+/* табличка */
+.status{
+  display:inline-block;margin-top:18px;padding:7px 18px;border-radius:999px;font-size:13px;letter-spacing:.04em;
+  background:var(--crimson);border:1.5px solid var(--gold);color:var(--gold-hi);
+  box-shadow:0 2px 8px rgba(0,0,0,.4);transition:background .5s,box-shadow .5s;
+}
+.open .status{background:var(--emerald);box-shadow:0 0 18px rgba(243,222,154,.55)}
+
+/* искры */
+.spark{position:absolute;left:50%;top:60px;width:6px;height:6px;border-radius:50%;z-index:2;pointer-events:none;
+  background:radial-gradient(circle,#fff6cf,var(--gold) 60%,transparent 70%);
+  animation:fly 1.2s ease-out forwards}
+@keyframes fly{
+  from{transform:translate(0,0) scale(1);opacity:1}
+  to{transform:translate(var(--x),var(--y)) scale(.2);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .shackle,.status{transition:none}.spark{display:none}
+}
+</style>
+</head>
+<body>
+<div class="lock" id="lock">
+  <div class="shackle"></div>
+  <div class="body">
+    <span class="rivet"></span><span class="rivet"></span><span class="rivet"></span><span class="rivet"></span>
+    <h1>Тайник Хогвартса</h1>
+    <p class="hint">Поверните диски и найдите пятизначный код</p>
+    <div class="wheels" id="wheels"></div>
+    <div class="status" id="status" role="status">Заперто</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var CODE = "25449", H = 44;
+  var lock = document.getElementById('lock');
+  var statusEl = document.getElementById('status');
+  var host = document.getElementById('wheels');
+  var W = [], isOpen = false, audio;
+
+  function mod(n){ return (n % 10 + 10) % 10; }
+
+  function click(){
+    try{
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      var o = audio.createOscillator(), g = audio.createGain();
+      o.type = 'square'; o.frequency.value = 900;
+      g.gain.setValueAtTime(.04, audio.currentTime);
+      g.gain.exponentialRampToValueAtTime(.0001, audio.currentTime + .05);
+      o.connect(g); g.connect(audio.destination);
+      o.start(); o.stop(audio.currentTime + .05);
+    }catch(e){}
+  }
+
+  function draw(w){
+    var h = '';
+    for(var k = -2; k <= 2; k++) h += '<div class="d">' + mod(w.v + k) + '</div>';
+    w.strip.style.transition = 'none';
+    w.strip.innerHTML = h;
+    w.strip.style.transform = 'translateY(' + (-H) + 'px)';
+    void w.strip.offsetHeight;
+  }
+
+  function step(i, dir){
+    var w = W[i];
+    if(w.t){ clearTimeout(w.t); w.v = mod(w.v + w.dir); draw(w); }
+    if(isOpen) close();
+    w.dir = dir;
+    w.strip.style.transition = 'transform .16s ease-out';
+    w.strip.style.transform = 'translateY(' + (-H * (1 + dir)) + 'px)';
+    click();
+    w.t = setTimeout(function(){
+      w.t = 0; w.v = mod(w.v + dir); draw(w); check();
+    }, 170);
+  }
+
+  function check(){
+    var code = W.map(function(w){ return w.v; }).join('');
+    if(code === CODE && !isOpen) open();
+  }
+
+  function open(){
+    isOpen = true;
+    lock.classList.add('open');
+    statusEl.textContent = 'Алохомора! Замок открыт';
+    for(var n = 0; n < 16; n++){
+      var s = document.createElement('i');
+      s.className = 'spark';
+      var a = Math.random() * Math.PI * 2, r = 50 + Math.random() * 110;
+      s.style.setProperty('--x', (Math.cos(a) * r) + 'px');
+      s.style.setProperty('--y', (Math.sin(a) * r - 40) + 'px');
+      lock.appendChild(s);
+      setTimeout(function(el){ el.remove(); }.bind(null, s), 1300);
+    }
+  }
+
+  function close(){
+    isOpen = false;
+    lock.classList.remove('open');
+    statusEl.textContent = 'Заперто';
+  }
+
+  for(let i = 0; i < 5; i++){
+    var col = document.createElement('div'); col.className = 'col';
+    var up = document.createElement('button'); up.className = 'arrow'; up.textContent = '▲'; up.setAttribute('aria-label','Цифра '+(i+1)+' вверх');
+    var down = document.createElement('button'); down.className = 'arrow'; down.textContent = '▼'; down.setAttribute('aria-label','Цифра '+(i+1)+' вниз');
+    var wheel = document.createElement('div'); wheel.className = 'wheel'; wheel.tabIndex = 0;
+    wheel.setAttribute('role','spinbutton'); wheel.setAttribute('aria-label','Диск '+(i+1));
+    var strip = document.createElement('div'); strip.className = 'strip';
+    var sel = document.createElement('div'); sel.className = 'sel';
+    wheel.appendChild(strip); wheel.appendChild(sel);
+    col.appendChild(up); col.appendChild(wheel); col.appendChild(down);
+    host.appendChild(col);
+
+    var w = { v: 0, strip: strip, t: 0, dir: 0 };
+    W.push(w); draw(w);
+
+    up.onclick = function(){ step(i, 1); };
+    down.onclick = function(){ step(i, -1); };
+
+    var last = 0;
+    wheel.addEventListener('wheel', function(e){
+      e.preventDefault();
+      var now = Date.now(); if(now - last < 110) return; last = now;
+      step(i, e.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
+
+    wheel.addEventListener('keydown', function(e){
+      if(e.key === 'ArrowUp'){ e.preventDefault(); step(i, 1); }
+      if(e.key === 'ArrowDown'){ e.preventDefault(); step(i, -1); }
+    });
+
+    var y0 = null;
+    wheel.addEventListener('pointerdown', function(e){ y0 = e.clientY; wheel.setPointerCapture(e.pointerId); });
+    wheel.addEventListener('pointermove', function(e){
+      if(y0 === null) return;
+      var dy = e.clientY - y0;
+      if(Math.abs(dy) >= 26){ step(i, dy < 0 ? 1 : -1); y0 = e.clientY; }
+    });
+    wheel.addEventListener('pointerup', function(){ y0 = null; });
+    wheel.addEventListener('pointercancel', function(){ y0 = null; });
+  }
+})();
+</script>
+</body>
+</html>
